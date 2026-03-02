@@ -77,7 +77,7 @@ def save_html_report(listings, path, title="Voitures Sport Lyon"):
       {''.join([f'<div class="stat"><span class="stat-val">{_fmt_prix(min(prices))}</span><span class="stat-lbl">Prix min</span></div><div class="stat"><span class="stat-val">{_fmt_prix(max(prices))}</span><span class="stat-lbl">Prix max</span></div>']) if prices else ''}
       {''.join([f'<div class="stat"><span class="stat-val">{int(sum(prices)/len(prices)):,} €</span><span class="stat-lbl">Prix moyen</span></div>']) if prices else ''}
       {''.join([f'<div class="stat"><span class="stat-val">{int(sum(kms)/len(kms)):,} km</span><span class="stat-lbl">Km moyen</span></div>']) if kms else ''}
-      <div class="stat"><span class="stat-val">{" / ".join(f"{t}:{n}" for t,n in tx_cnt.most_common(3))}</span><span class="stat-lbl">Transmissions</span></div>
+
     """
 
     # --- Lignes du tableau ---
@@ -87,7 +87,7 @@ def save_html_report(listings, path, title="Voitures Sport Lyon"):
                        key=lambda x: x[1]))
 
     all_brands   = sorted(brand_cnt.keys())
-    all_tx       = sorted(set(l.get("tx_clean", "?") for l in listings if l.get("tx_clean")))
+
 
     for i, l in enumerate(sorted_lst, 1):
         prix_fmt   = _fmt_prix(l.get("prix"))
@@ -181,7 +181,7 @@ def save_html_report(listings, path, title="Voitures Sport Lyon"):
     # Options pour les filtres
     dealer_opts = "".join(f'<option value="{k}">{v}</option>' for k, v in dealer_map.items())
     brand_opts  = "".join(f'<option value="{b}">{b}</option>' for b in all_brands)
-    tx_opts     = "".join(f'<option value="{t}">{t}</option>' for t in all_tx)
+
 
     html = f"""<!DOCTYPE html>
 <html lang="fr">
@@ -296,12 +296,6 @@ def save_html_report(listings, path, title="Voitures Sport Lyon"):
         {brand_opts}
       </select>
     </label>
-    <label>Transmission :
-      <select id="tx-filter" onchange="filterRows()">
-        <option value="">Toutes</option>
-        {tx_opts}
-      </select>
-    </label>
     <label>Prix max :
       <select id="prix-filter" onchange="filterRows()">
         <option value="0">Tous</option>
@@ -377,20 +371,17 @@ def save_html_report(listings, path, title="Voitures Sport Lyon"):
       const q      = document.getElementById("search").value.toLowerCase();
       const dealer = document.getElementById("dealer-filter").value;
       const brand  = document.getElementById("brand-filter").value;
-      const tx     = document.getElementById("tx-filter").value;
       const maxPrix= parseFloat(document.getElementById("prix-filter").value) || 0;
       let visible  = 0;
       document.querySelectorAll("#table-body tr").forEach(row => {{
         const text      = row.textContent.toLowerCase();
         const rowDealer = row.dataset.dealer || "";
         const rowBrand  = row.dataset.brand  || "";
-        const rowTx     = row.dataset.tx     || "";
         const prixCell  = row.cells[3] ? row.cells[3].textContent.replace(/[^\\d]/g,"") : "0";
         const prixVal   = parseFloat(prixCell) || 0;
         const ok = text.includes(q)
                 && (dealer === "" || rowDealer.includes(dealer))
                 && (brand  === "" || rowBrand.toLowerCase().includes(brand.toLowerCase()))
-                && (tx     === "" || rowTx.toLowerCase().includes(tx.toLowerCase()))
                 && (maxPrix === 0  || prixVal <= maxPrix);
         row.style.display = ok ? "" : "none";
         if (ok) visible++;
