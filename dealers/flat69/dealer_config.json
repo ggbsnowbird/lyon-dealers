@@ -1,0 +1,11 @@
+{
+  "key": "flat69",
+  "name": "Flat69",
+  "url": "https://www.flat69.fr",
+  "ville": "Lyon",
+  "listing_url": "https://www.flat69.fr/occasion-porsche-lyon/",
+  "platform": "php_static",
+  "scraper": "flat69",
+  "active": true,
+  "notes": "PHP old-school statique. Spécialiste Porsche. Petit stock (~7 véhicules). HTML pur, pas de JS requis."
+}

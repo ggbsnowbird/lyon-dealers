@@ -1,0 +1,13 @@
+{
+  "key": "symbol_cars",
+  "name": "Symbol Cars",
+  "url": "https://symbolcars.fr",
+  "ville": "Lyon",
+  "listing_url": "https://symbolcars.fr/3-decouvrez-notre-collection",
+  "listing_url_pattern": "https://symbolcars.fr/3-decouvrez-notre-collection?page={page}",
+  "detail_url_pattern": "https://symbolcars.fr/{slug}.html",
+  "platform": "prestashop",
+  "scraper": "symbol_cars",
+  "active": true,
+  "notes": "PrestaShop server-rendered HTML. GTM dataLayer contient toutes les autos. Pagination ?page=N."
+}

@@ -1,0 +1,11 @@
+{
+  "key": "west_motors",
+  "name": "West Motors",
+  "url": "https://www.westmotors.fr",
+  "ville": "Lyon",
+  "listing_url": "https://www.westmotors.fr/showroom",
+  "platform": "wordpress_motorix",
+  "scraper": "west_motors",
+  "active": true,
+  "notes": "WordPress + Motorix theme. Probable AJAX pour les fiches. Playwright requis."
+}

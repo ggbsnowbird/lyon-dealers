@@ -1,0 +1,11 @@
+{
+  "key": "cars_experience",
+  "name": "Cars Experience",
+  "url": "https://cars-experience.fr",
+  "ville": "Lyon",
+  "listing_url": "https://cars-experience.fr/index.php/a-la-vente/",
+  "platform": "wordpress_elementor",
+  "scraper": "cars_experience",
+  "active": true,
+  "notes": "WordPress + Elementor + Infolio theme. Portfolio CPT rendu server-side. Pas de JS requis. Options structurées sur pages détail."
+}

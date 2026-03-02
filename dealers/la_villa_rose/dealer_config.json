@@ -1,0 +1,12 @@
+{
+  "key": "la_villa_rose",
+  "name": "La Villa Rose",
+  "url": "https://www.lavillarose.fr",
+  "ville": "Lyon",
+  "listing_url": "https://www.lavillarose.fr/nos-voitures/",
+  "wc_api_url": "https://www.lavillarose.fr/wp-json/wc/v3/products",
+  "platform": "wordpress_woocommerce",
+  "scraper": "la_villa_rose",
+  "active": true,
+  "notes": "WordPress + WooCommerce + WP Grid Builder. Spécialiste Porsche. API WooCommerce potentiellement exploitable."
+}

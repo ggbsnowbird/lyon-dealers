@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Outputs générés (ne pas versionner les rapports/données)
+annonces_*.json
+annonces_*.csv
+rapport_*.html
+
+# Debug intermédiaires
+debug_*.json
+debug_*.html
+
+# OS
+.DS_Store

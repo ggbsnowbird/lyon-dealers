@@ -1,0 +1,12 @@
+{
+  "key": "my_exclusive_car",
+  "name": "My Exclusive Car",
+  "url": "https://www.myexclusivecar.fr",
+  "ville": "Lyon",
+  "listing_url": "https://www.myexclusivecar.fr/voitures",
+  "rss_url": "https://www.myexclusivecar.fr/rss/annonces.xml",
+  "platform": "php_custom",
+  "scraper": "my_exclusive_car",
+  "active": true,
+  "notes": "PHP custom (annonces-auto). Flux RSS disponible. HTML statique."
+}

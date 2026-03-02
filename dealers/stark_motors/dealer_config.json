@@ -1,0 +1,11 @@
+{
+  "key": "stark_motors",
+  "name": "Stark Motors",
+  "url": "https://www.starkmotors.fr",
+  "ville": "Lyon",
+  "listing_url": "https://www.starkmotors.fr/shop",
+  "platform": "php_custom",
+  "scraper": "stark_motors",
+  "active": true,
+  "notes": "PHP custom avec Bulma CSS. Toutes les autos chargées en une seule page HTML. Filtres côté client JS."
+}
