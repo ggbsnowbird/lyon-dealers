@@ -29,16 +29,14 @@ from statistics import median
 THRESHOLDS = [
     (-0.10, "Excellent Deal", "#15803d", "#dcfce7"),
     (-0.03, "Bon Deal",       "#1d4ed8", "#dbeafe"),
-    ( 0.03, "Prix correct",   "#475569", "#1e293b"),
-    ( 0.10, "Prix élevé",     "#b45309", "#fef3c7"),
-    ( 9999, "Hors marché",    "#b91c1c", "#fee2e2"),
 ]
 
 def _deal_label(ecart):
+    """Retourne (label, color, bg) uniquement pour les bons deals, None sinon."""
     for threshold, label, color, bg in THRESHOLDS:
         if ecart < threshold:
             return label, color, bg
-    return THRESHOLDS[-1][1], THRESHOLDS[-1][2], THRESHOLDS[-1][3]
+    return None, None, None
 
 
 # ---------------------------------------------------------------------------
@@ -55,24 +53,44 @@ _BASE_MODELS = [
     # Lamborghini
     "huracan", "urus", "gallardo", "aventador",
     # McLaren
-    "720s", "570s", "600lt", "650s", "765lt", "gt", "artura", "mp4",
+    "720s", "570s", "600lt", "650s", "765lt", "artura", "mp4",
     # Aston Martin
     "vantage", "db11", "dbs", "dbx", "db9",
     # Maserati
     "granturismo", "ghibli", "grecale", "levante", "mc20", "grancabrio", "gransport",
     "4200",
     # Mercedes
-    "amg gt", "slr", "sl ", "slc", "gle", "gls", "g63", "c63", "e63", "a45",
+    "amg gt", "slr", "sl", "slc",
     # BMW
-    "m3", "m4", "m5", "m8", "z4", "z8", "i8", "x5", "x6",
+    "m3", "m4", "m5", "m8", "z4", "z8", "i8",
     # Audi
-    "r8", "rs6", "rs3", "rs q8",
+    "r8", "rs6", "rs3",
+    # Jaguar
+    "f-type",
     # Autres
-    "nsx", "viper", "mustang", "corvette", "f150",
+    "nsx", "viper", "mustang", "corvette",
 ]
 
+# Générations connues par modèle — pour affiner le groupe
+_GENERATIONS = {
+    "911":  ["992", "991", "997", "996", "993", "964", "930"],
+    "718":  ["982"],
+    "cayenne": ["e-hybrid"],
+    "488":  [],
+    "f8":   [],
+    "812":  [],
+    "granturismo": [],
+    "artura": [],
+    "720s": [],
+    "f-type": [],
+    "vantage": [],
+}
+
 def _normalize_group_key(marque, modele):
-    """Retourne une clé de groupe courte : 'porsche 911', 'ferrari 488', etc."""
+    """
+    Retourne une clé de groupe précise : 'porsche 911 992', 'ferrari 488', etc.
+    Retourne None si aucun modèle de base reconnu (évite les groupes fourre-tout).
+    """
     marque_l = (marque or "").lower().strip()
     modele_l = (modele or "").lower().strip()
 
@@ -80,20 +98,25 @@ def _normalize_group_key(marque, modele):
     if modele_l.startswith(marque_l):
         modele_l = modele_l[len(marque_l):].strip()
 
-    # Chercher le modèle de base dans le texte
+    # Chercher le modèle de base
+    found_base = None
     for base in _BASE_MODELS:
-        # Chercher le mot entier (ou début de mot pour les codes)
         pattern = r'\b' + re.escape(base) + r'\b'
         if re.search(pattern, modele_l):
-            return f"{marque_l} {base}".strip()
+            found_base = base
+            break
 
-    # Fallback : premier mot significatif du modèle (> 2 chars, pas un chiffre)
-    parts = modele_l.split()
-    for p in parts:
-        if len(p) > 2 and not p.isdigit():
-            return f"{marque_l} {p}".strip()
+    # Pas de modèle reconnu → pas de scoring (évite "jaguar", "bmw", etc.)
+    if not found_base:
+        return None
 
-    return marque_l or "inconnu"
+    # Chercher la génération dans le modèle
+    gens = _GENERATIONS.get(found_base, [])
+    for gen in gens:
+        if re.search(r'\b' + re.escape(gen) + r'\b', modele_l):
+            return f"{marque_l} {found_base} {gen}"
+
+    return f"{marque_l} {found_base}"
 
 
 # ---------------------------------------------------------------------------
@@ -140,6 +163,8 @@ def score(listings):
         if not l.get("prix") or not l.get("km"):
             continue
         key = _normalize_group_key(l.get("marque", ""), l.get("modele", ""))
+        if key is None:
+            continue
         groups.setdefault(key, []).append(l)
 
     # -- Étape 2 : calculer la régression par groupe --
@@ -161,7 +186,7 @@ def score(listings):
             l["deal_score"] = None
             continue
         key = _normalize_group_key(l.get("marque", ""), l.get("modele", ""))
-        if key not in group_models:
+        if key is None or key not in group_models:
             l["deal_score"] = None
             continue
 
@@ -195,7 +220,7 @@ def print_stats(listings):
     from collections import Counter
     scored = [l for l in listings if l.get("deal_score")]
     unscored = [l for l in listings if not l.get("deal_score")]
-    cnt = Counter(l["deal_score"]["label"] for l in scored)
+    cnt = Counter(l["deal_score"]["label"] for l in scored if l["deal_score"].get("label"))
     print(f"\n  Scoring — {len(scored)} évalués / {len(unscored)} non évalués")
     for label, n in cnt.most_common():
         print(f"    {label:<20} : {n}")
