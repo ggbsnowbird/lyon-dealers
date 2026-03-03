@@ -36,6 +36,7 @@ def _dealer_badge_color(dealer_key):
         "cars_experience": "#1e2d3a",
         "la_villa_rose":   "#3a2d1e",
         "west_motors":     "#1e3a3a",
+        "evo_cars":        "#2d3a1e",
     }
     return palette.get(dealer_key, "#1e293b")
 
@@ -48,6 +49,7 @@ def _dealer_text_color(dealer_key):
         "cars_experience": "#7dd3fc",
         "la_villa_rose":   "#fcd34d",
         "west_motors":     "#67e8f9",
+        "evo_cars":        "#bef264",
     }
     return palette.get(dealer_key, "#94a3b8")
 
@@ -60,7 +62,7 @@ def _tx_class(tx_clean):
 # Rapport HTML (même structure que gt3-agent)
 # ---------------------------------------------------------------------------
 
-def save_html_report(listings, path, title="Voitures Sport Lyon"):
+def save_html_report(listings, path, title="Lugdunum Cars"):
     timestamp   = datetime.now().strftime("%d/%m/%Y %H:%M")
     sorted_lst  = sorted(listings, key=lambda x: (x.get("prix") or 999999999))
 
@@ -273,10 +275,10 @@ def save_html_report(listings, path, title="Voitures Sport Lyon"):
   <header>
     <div>
       <h1>{title}</h1>
-      <p>Vendeurs lyonnais · {len(listings)} annonces · {len(dlr_cnt)} vendeurs · Généré le {timestamp}</p>
+      <p>Les meilleures autos des meilleurs vendeurs pro de la région · {len(listings)} annonces · {len(dlr_cnt)} vendeurs · Généré le {timestamp}</p>
     </div>
     <div class="header-right">
-      Sport Car Match
+      Lugdunum Cars
     </div>
   </header>
 
@@ -334,7 +336,7 @@ def save_html_report(listings, path, title="Voitures Sport Lyon"):
   </div>
 
   <footer>
-    Sport Car Match — Vendeurs lyonnais · {len(listings)} annonces scrapées le {timestamp}
+    Lugdunum Cars — Les meilleures autos des meilleurs vendeurs pro de la région · {len(listings)} annonces scrapées le {timestamp}
   </footer>
 
   <script>
@@ -446,5 +448,5 @@ def save_results(listings, label="lyon_dealers"):
     print(f"    Par marque (top 5) : " + " | ".join(f"{b}: {n}" for b, n in brand_cnt.most_common(5)))
 
     html_path = f"rapport_{label}_{ts}.html"
-    save_html_report(listings, html_path, title="Voitures Sport Lyon")
+    save_html_report(listings, html_path, title="Lugdunum Cars")
     return json_path, csv_path, html_path

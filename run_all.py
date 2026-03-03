@@ -33,6 +33,7 @@ SCRAPERS = {
     "cars_experience": {"module": "scrapers.cars_experience", "playwright": False, "active": True},
     "la_villa_rose":   {"module": "scrapers.la_villa_rose",   "playwright": False, "active": True},
     "west_motors":     {"module": "scrapers.west_motors",     "playwright": False, "active": True},
+    "evo_cars":        {"module": "scrapers.evo_cars",        "playwright": False, "active": True},
 }
 
 
@@ -78,6 +79,11 @@ def main():
     parser.add_argument(
         "--output", default="lyon_dealers",
         help="Préfixe du fichier de sortie (défaut: lyon_dealers)"
+    )
+    parser.add_argument(
+        "--base-json",
+        help="JSON existant à conserver — seuls les dealers re-scrapés sont remplacés",
+        metavar="FILE",
     )
     args = parser.parse_args()
 
@@ -129,6 +135,20 @@ def main():
     if not all_listings:
         print(f"\n  Aucune annonce récupérée. Vérifiez les scrapers.")
         return
+
+    # Si --base-json : charger les annonces existantes et remplacer les dealers re-scrapés
+    if args.base_json:
+        base_path = Path(args.base_json)
+        if base_path.exists():
+            with open(base_path, encoding="utf-8") as f:
+                base_listings = json.load(f)
+            # Supprimer les annonces des dealers re-scrapés dans la base
+            scraped_keys = set(selected.keys())
+            base_listings = [l for l in base_listings if l.get("source") not in scraped_keys]
+            all_listings = base_listings + all_listings
+            print(f"\n  Fusion: {len(base_listings)} annonces conservées + {len(all_listings) - len(base_listings)} nouvelles = {len(all_listings)} total")
+        else:
+            print(f"\n  [!] --base-json introuvable: {base_path}")
 
     # Génération du rapport
     print(f"\n{'='*70}")
