@@ -314,7 +314,7 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
           <th data-col="3">Prix</th>
           <th data-col="4">Km</th>
           <th data-col="5">Année</th>
-          <th data-col="6">Tx</th>
+          <th data-col="6">Transmission</th>
           <th>Couleur</th>
           <th>Vendeur</th>
           <th>Lien</th>
