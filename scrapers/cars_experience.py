@@ -161,18 +161,27 @@ def _parse_detail(url, html):
     title_raw = h1.get_text(strip=True) if h1 else ""
     marque, modele = _parse_brand_model(title_raw)
 
-    # Image principale
-    img_el = (soup.select_one(".elementor-widget-image img") or
-              soup.select_one("figure.wp-block-image img") or
-              soup.select_one(".wp-post-image") or
-              soup.select_one("img.attachment-full") or
-              soup.select_one("img"))
+    # Image principale — Cars Experience : Swiper slider, vraies photos en .swiper-slide-image
+    # Les images lazy-loadées ont src=SVG et la vraie URL dans data-src
     image_url = None
-    if img_el:
-        src = str(img_el.get("src") or img_el.get("data-src") or img_el.get("data-lazy-src") or "")
-        if src and not src.startswith("http"):
-            src = DEALER_URL + src
-        image_url = src or None
+    for img in soup.select("img.swiper-slide-image"):
+        src = (str(img.get("data-src") or "").strip() or
+               str(img.get("src") or "").strip())
+        if src and not src.startswith("data:") and "svg" not in src.lower():
+            if not src.startswith("http"):
+                src = DEALER_URL + src
+            if "logo" not in src.lower() and "Cars-Id" not in src:
+                image_url = src
+                break
+    # Fallback : attachment-full qui n'est pas le logo générique
+    if not image_url:
+        for img in soup.select("img.attachment-full, img.size-full"):
+            src = str(img.get("src") or "").strip()
+            if src and "logo" not in src.lower() and "Cars-Id" not in src:
+                if not src.startswith("http"):
+                    src = DEALER_URL + src
+                image_url = src
+                break
 
     # Caractéristiques: prix, km, année, tx, couleur, puissance
     prix, km, annee, tx, couleur, puissance_cv, carrosserie = None, None, None, None, None, None, None

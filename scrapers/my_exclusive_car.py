@@ -226,14 +226,18 @@ def _parse_detail(url, html):
                 prix = v
                 break
 
-    # Image
-    img_el = (soup.select_one(".car-photo img, .main-photo img, .photo-principale img") or
+    # Image — myexclusivecar.fr : photos sur auto.cdn-rivamedia.com, classe "bigimg"
+    img_el = (soup.select_one("img.bigimg") or
+              soup.select_one("img[src*='cdn-rivamedia']") or
+              soup.select_one(".car-photo img, .main-photo img, .photo-principale img") or
               soup.select_one("img[src*='upload'], img[src*='photo'], img[class*='main']"))
     image_url = None
     if img_el:
         image_url = str(img_el.get("src") or img_el.get("data-src") or "")
         if image_url and not image_url.startswith("http"):
             image_url = DEALER_URL + image_url
+        if not image_url or "logo" in image_url.lower():
+            image_url = None
 
     # Caractéristiques
     km, annee, tx, couleur, puissance_cv, carrosserie = None, None, None, None, None, None
