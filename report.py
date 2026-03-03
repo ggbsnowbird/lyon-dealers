@@ -1,6 +1,5 @@
 """
 report.py — Générateur de rapport HTML dark-mode pour lyon-dealers
-Style identique à gt3-agent, adapté sans scoring.
 """
 
 import json
@@ -10,6 +9,8 @@ import csv
 from datetime import datetime
 from collections import Counter
 from pathlib import Path
+
+import scoring
 
 
 # ---------------------------------------------------------------------------
@@ -82,6 +83,15 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
 
     """
 
+    # --- Scoring deal (modifie les dicts en place) ---
+    scoring.score(listings)
+
+    # Ordre d'affichage des labels deal
+    DEAL_ORDER = ["Excellent Deal", "Bon Deal", "Prix correct", "Prix élevé", "Hors marché"]
+    deal_labels_present = [lb for lb in DEAL_ORDER
+                           if any(l.get("deal_score", {}) and
+                                  l["deal_score"]["label"] == lb for l in listings)]
+
     # --- Lignes du tableau ---
     rows_html = ""
     dealer_map   = dict(sorted(
@@ -103,6 +113,7 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
         dealer_key = l.get("source", "")
         dealer_nm  = l.get("dealer_name", "—")
         img        = l.get("image_url") or ""
+        deal       = l.get("deal_score")
         puissance  = l.get("puissance_cv") or l.get("puissance_kw") or ""
         carrosserie= l.get("carrosserie") or ""
 
@@ -156,7 +167,7 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
             thumb = _svg
 
         rows_html += f"""
-        <tr data-dealer="{dealer_key}" data-brand="{marque}" data-tx="{tx_clean}">
+        <tr data-dealer="{dealer_key}" data-brand="{marque}" data-tx="{tx_clean}" data-deal="{deal["label"] if deal else ""}">
           <td class="rank">#{i}</td>
           <td class="thumb-cell">{thumb}</td>
           <td class="car-name">
@@ -164,7 +175,7 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
             {'<span class="carrosserie-chip">' + carrosserie + '</span>' if carrosserie else ''}
             <br><small class="puissance">{puissance_str}</small>
           </td>
-          <td class="prix">{prix_fmt}</td>
+          <td class="prix">{prix_fmt}{'<span class="deal-badge" style="background:{};color:{}">{}</span>'.format(deal["bg"], deal["color"], deal["label"]) if deal else ''}</td>
           <td>{km_fmt}</td>
           <td>{annee}</td>
           <td><span class="tx {_tx_class(tx_clean)}">{tx_clean}</span></td>
@@ -254,6 +265,11 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
     .tx-dct       {{ background: #1e3a5f; color: #93c5fd; }}
     .tx-robotisee {{ background: #1e3a5f; color: #93c5fd; }}
     .vendeur {{ white-space: nowrap; }}
+
+    /* Deal score badge */
+    .deal-badge {{ display: inline-block; padding: 1px 6px; border-radius: 4px;
+                   font-size: 10px; font-weight: 700; margin-left: 6px;
+                   vertical-align: middle; white-space: nowrap; letter-spacing: .02em; }}
     .dealer-badge {{ padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600;
                      display: inline-block; }}
     a {{ color: #38bdf8; text-decoration: none; font-weight: 600; }}
@@ -299,6 +315,12 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
         <option value="150000">≤ 150k€</option>
         <option value="200000">≤ 200k€</option>
         <option value="300000">≤ 300k€</option>
+      </select>
+    </label>
+    <label>Deal :
+      <select id="deal-filter" onchange="filterRows()">
+        <option value="">Tous</option>
+        {''.join(f'<option value="{lb}">{lb}</option>' for lb in deal_labels_present)}
       </select>
     </label>
     <span class="filter-count" id="filter-count">{len(listings)} résultats</span>
@@ -365,16 +387,19 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
       const dealer = document.getElementById("dealer-filter").value;
       const brand  = document.getElementById("brand-filter").value;
       const maxPrix= parseFloat(document.getElementById("prix-filter").value) || 0;
+      const deal   = document.getElementById("deal-filter").value;
       let visible  = 0;
       document.querySelectorAll("#table-body tr").forEach(row => {{
         const text      = row.textContent.toLowerCase();
         const rowDealer = row.dataset.dealer || "";
         const rowBrand  = row.dataset.brand  || "";
+        const rowDeal   = row.dataset.deal   || "";
         const prixCell  = row.cells[3] ? row.cells[3].textContent.replace(/[^\\d]/g,"") : "0";
         const prixVal   = parseFloat(prixCell) || 0;
         const ok = text.includes(q)
                 && (dealer === "" || rowDealer.includes(dealer))
                 && (brand  === "" || rowBrand.toLowerCase().includes(brand.toLowerCase()))
+                && (deal   === "" || rowDeal === deal)
                 && (maxPrix === 0  || prixVal <= maxPrix);
         row.style.display = ok ? "" : "none";
         if (ok) visible++;
