@@ -4,6 +4,7 @@ report.py — Générateur de rapport HTML dark-mode pour lyon-dealers
 
 import json
 import os
+import re
 import webbrowser
 import csv
 from datetime import datetime
@@ -114,6 +115,8 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
         dealer_nm  = l.get("dealer_name", "—")
         img        = l.get("image_url") or ""
         deal       = l.get("deal_score")
+        gc_slug    = re.sub(r"[^a-z0-9-]", "-", (l.get("id") or modele or "")[:40].lower())
+        gc_title   = f"{dealer_nm} — {(modele or '')[:35]}".replace("'", " ")
         puissance  = l.get("puissance_cv") or l.get("puissance_kw") or ""
         carrosserie= l.get("carrosserie") or ""
 
@@ -183,7 +186,8 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
           <td class="vendeur">
             <span class="dealer-badge" style="background:{dlr_bg};color:{dlr_col}">{dealer_nm}</span>
           </td>
-          <td><a href="{url}" target="_blank" rel="noopener">Voir</a></td>
+          <td><a href="{url}" target="_blank" rel="noopener"
+            onclick="if(window.goatcounter)goatcounter.count({{path:'click/{dealer_key}/{gc_slug}',title:'{gc_title}'}})">Voir</a></td>
         </tr>"""
 
     # Options pour les filtres
@@ -279,6 +283,8 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
     footer {{ text-align: center; padding: 20px; color: #334155; font-size: 11px;
               border-top: 1px solid #1e293b; margin-top: 10px; }}
   </style>
+  <script data-goatcounter="https://lugdunum.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
   <header>
