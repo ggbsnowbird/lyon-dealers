@@ -102,9 +102,6 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
         tx_clean   = l.get("tx_clean") or "?"
         dealer_key = l.get("source", "")
         dealer_nm  = l.get("dealer_name", "—")
-        opts       = l.get("options_brutes") or []
-        opts_str   = ", ".join(str(o) for o in opts[:5]) if opts else "—"
-        desc       = (l.get("description") or "")[:120]
         img        = l.get("image_url") or ""
         puissance  = l.get("puissance_cv") or l.get("puissance_kw") or ""
         carrosserie= l.get("carrosserie") or ""
@@ -172,8 +169,6 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
           <td>{annee}</td>
           <td><span class="tx {_tx_class(tx_clean)}">{tx_clean}</span></td>
           <td class="couleur-cell">{couleur}</td>
-          <td class="opts">{opts_str}</td>
-          <td class="desc">{desc}</td>
           <td class="vendeur">
             <span class="dealer-badge" style="background:{dlr_bg};color:{dlr_col}">{dealer_nm}</span>
           </td>
@@ -258,8 +253,6 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
     .tx-pdk       {{ background: #1e3a5f; color: #93c5fd; }}
     .tx-dct       {{ background: #1e3a5f; color: #93c5fd; }}
     .tx-robotisee {{ background: #1e3a5f; color: #93c5fd; }}
-    .opts {{ font-size: 11px; color: #94a3b8; max-width: 200px; }}
-    .desc {{ font-size: 11px; color: #64748b; max-width: 240px; font-style: italic; }}
     .vendeur {{ white-space: nowrap; }}
     .dealer-badge {{ padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600;
                      display: inline-block; }}
@@ -323,8 +316,6 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
           <th data-col="5">Année</th>
           <th data-col="6">Tx</th>
           <th>Couleur</th>
-          <th>Options</th>
-          <th>Description</th>
           <th>Vendeur</th>
           <th>Lien</th>
         </tr>
