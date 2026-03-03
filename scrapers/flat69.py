@@ -171,7 +171,26 @@ def _parse_detail(url, html):
             km     = _clean_km(km_el.get_text() if km_el else "")
             annee  = _clean_year(year_el.get_text() if year_el else "")
             href   = str(link_el.get("href") or "") if link_el else ""
-            img    = str(img_el.get("src") or "") if img_el else ""
+            # Flat69 : la vraie image est dans l'attribut style de l'img
+            # ex: style="background:url(photos_listing/mini_9983202664.jpg) no-repeat;"
+            # On préfère l'image _1.jpg (grande) depuis img-occasion-mobile si dispo,
+            # sinon la miniature depuis l'img principale.
+            img = None
+            # 1. Chercher img-occasion-mobile avec background photo _1.jpg
+            for mobile_img in mini.select("img.img-occasion-mobile"):
+                style = str(mobile_img.get("style") or "")
+                m_url = re.search(r"url\(([^)]+)\)", style)
+                if m_url:
+                    raw = m_url.group(1).strip("'\"")
+                    if "_1.jpg" in raw or "_2.jpg" in raw:
+                        img = raw
+                        break
+            # 2. Fallback : miniature depuis l'img principale (style background)
+            if not img and img_el:
+                style = str(img_el.get("style") or "")
+                m_url = re.search(r"url\(([^)]+)\)", style)
+                if m_url:
+                    img = m_url.group(1).strip("'\"")
 
             # Flat69 : hrefs relatifs (sans slash initial)
             if href and not href.startswith("http"):
@@ -181,12 +200,9 @@ def _parse_detail(url, html):
                     href = DEALER_URL + href
             if not href:
                 href = LISTING_URL
-            # Images avec chemin relatif "../photos/"
+            # Résoudre l'URL image relative — base = DEALER_URL/occasion-porsche-lyon/
             if img and not img.startswith("http"):
-                if img.startswith("../"):
-                    img = DEALER_URL + "/" + img.lstrip("../")
-                else:
-                    img = DEALER_URL + "/" + img.lstrip("/")
+                img = f"{DEALER_URL}/occasion-porsche-lyon/{img}"
 
             # Chercher km et année dans le titre si vide
             if not km:
