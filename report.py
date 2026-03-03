@@ -66,17 +66,24 @@ def _tx_class(tx_clean):
 
 def save_html_report(listings, path, title="Lugdunum Cars"):
     timestamp   = datetime.now().strftime("%d/%m/%Y %H:%M")
-    sorted_lst  = sorted(listings, key=lambda x: (x.get("prix") or 999999999))
+    # Sold en dernier, puis tri par prix
+    sorted_lst  = sorted(listings, key=lambda x: (
+        1 if x.get("sold") else 0,
+        x.get("prix") or 999999999
+    ))
 
-    # --- Stats globales ---
-    prices   = [l["prix"] for l in listings if l.get("prix")]
-    kms      = [l["km"]   for l in listings if l.get("km")]
-    tx_cnt   = Counter(l.get("tx_clean", "?") for l in listings)
-    dlr_cnt  = Counter(l.get("dealer_name", "?") for l in listings)
-    brand_cnt= Counter(l.get("marque", "?") for l in listings)
+    # --- Stats globales (hors sold) ---
+    active = [l for l in listings if not l.get("sold")]
+    n_sold = sum(1 for l in listings if l.get("sold"))
+    prices   = [l["prix"] for l in active if l.get("prix")]
+    kms      = [l["km"]   for l in active if l.get("km")]
+    tx_cnt   = Counter(l.get("tx_clean", "?") for l in active)
+    dlr_cnt  = Counter(l.get("dealer_name", "?") for l in active)
+    brand_cnt= Counter(l.get("marque", "?") for l in active)
 
     stats_html = f"""
-      <div class="stat"><span class="stat-val">{len(listings)}</span><span class="stat-lbl">Annonces</span></div>
+      <div class="stat"><span class="stat-val">{len(active)}</span><span class="stat-lbl">En vente</span></div>
+      {'<div class="stat"><span class="stat-val">' + str(n_sold) + '</span><span class="stat-lbl">Vendues</span></div>' if n_sold else ''}
       <div class="stat"><span class="stat-val">{len(dlr_cnt)}</span><span class="stat-lbl">Vendeurs</span></div>
       {''.join([f'<div class="stat"><span class="stat-val">{_fmt_prix(min(prices))}</span><span class="stat-lbl">Prix min</span></div><div class="stat"><span class="stat-val">{_fmt_prix(max(prices))}</span><span class="stat-lbl">Prix max</span></div>']) if prices else ''}
       {''.join([f'<div class="stat"><span class="stat-val">{int(sum(prices)/len(prices)):,} €</span><span class="stat-lbl">Prix moyen</span></div>']) if prices else ''}
@@ -103,6 +110,7 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
 
 
     for i, l in enumerate(sorted_lst, 1):
+        is_sold    = bool(l.get("sold"))
         prix_fmt   = _fmt_prix(l.get("prix"))
         km_fmt     = _fmt_km(l.get("km"))
         url        = l.get("url", "#")
@@ -114,11 +122,12 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
         dealer_key = l.get("source", "")
         dealer_nm  = l.get("dealer_name", "—")
         img        = l.get("image_url") or ""
-        deal       = l.get("deal_score")
+        deal       = None if is_sold else l.get("deal_score")
         gc_slug    = re.sub(r"[^a-z0-9-]", "-", (l.get("id") or modele or "")[:40].lower())
         gc_title   = f"{dealer_nm} — {(modele or '')[:35]}".replace("'", " ")
         puissance  = l.get("puissance_cv") or l.get("puissance_kw") or ""
         carrosserie= l.get("carrosserie") or ""
+        sold_at    = l.get("sold_at", "")
 
         dlr_bg  = _dealer_badge_color(dealer_key)
         dlr_col = _dealer_text_color(dealer_key)
@@ -169,13 +178,15 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
         else:
             thumb = _svg
 
+        sold_cls = ' sold-row' if is_sold else ''
         rows_html += f"""
-        <tr data-dealer="{dealer_key}" data-brand="{marque}" data-tx="{tx_clean}" data-deal="{deal["label"] if deal else ""}">
+        <tr data-dealer="{dealer_key}" data-brand="{marque}" data-tx="{tx_clean}" data-deal="{deal["label"] if deal else ""}" data-sold="{'1' if is_sold else '0'}" class="{sold_cls.strip()}">
           <td class="rank">#{i}</td>
           <td class="thumb-cell">{thumb}</td>
           <td class="car-name">
             <strong>{marque} {modele}</strong>
             {'<span class="carrosserie-chip">' + carrosserie + '</span>' if carrosserie else ''}
+            {'<span class="sold-badge">Vendu' + (f' {sold_at}' if sold_at else '') + '</span>' if is_sold else ''}
             <br><small class="puissance">{puissance_str}</small>
           </td>
           <td class="prix">{prix_fmt}{'<span class="deal-badge" style="background:{};color:{}">{}</span>'.format(deal["bg"], deal["color"], deal["label"]) if deal else ''}</td>
@@ -270,6 +281,14 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
     .tx-robotisee {{ background: #1e3a5f; color: #93c5fd; }}
     .vendeur {{ white-space: nowrap; }}
 
+    /* Annonces vendues */
+    tr.sold-row {{ opacity: .45; }}
+    tr.sold-row td {{ text-decoration: line-through; color: #64748b !important; }}
+    tr.sold-row td.thumb-cell, tr.sold-row td:last-child, tr.sold-row td.vendeur {{ text-decoration: none; }}
+    .sold-badge {{ display:inline-block; padding:1px 6px; border-radius:4px; font-size:10px;
+                   font-weight:700; background:#1e293b; color:#64748b;
+                   border:1px solid #334155; margin-left:4px; }}
+
     /* Deal score badge */
     .deal-badge {{ display: inline-block; padding: 1px 6px; border-radius: 4px;
                    font-size: 10px; font-weight: 700; margin-left: 6px;
@@ -329,7 +348,14 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
         {''.join(f'<option value="{lb}">{lb}</option>' for lb in deal_labels_present)}
       </select>
     </label>
-    <span class="filter-count" id="filter-count">{len(listings)} résultats</span>
+    <label>
+      <select id="sold-filter" onchange="filterRows()">
+        <option value="active">En vente</option>
+        <option value="all">Tout afficher</option>
+        {'<option value="sold">Vendues uniquement</option>' if n_sold else ''}
+      </select>
+    </label>
+    <span class="filter-count" id="filter-count">{len(active)} résultats</span>
   </div>
 
   <div class="table-wrap">
@@ -394,18 +420,22 @@ def save_html_report(listings, path, title="Lugdunum Cars"):
       const brand  = document.getElementById("brand-filter").value;
       const maxPrix= parseFloat(document.getElementById("prix-filter").value) || 0;
       const deal   = document.getElementById("deal-filter").value;
+      const sold   = document.getElementById("sold-filter").value;
       let visible  = 0;
       document.querySelectorAll("#table-body tr").forEach(row => {{
         const text      = row.textContent.toLowerCase();
         const rowDealer = row.dataset.dealer || "";
         const rowBrand  = row.dataset.brand  || "";
         const rowDeal   = row.dataset.deal   || "";
+        const rowSold   = row.dataset.sold   || "0";
         const prixCell  = row.cells[3] ? row.cells[3].textContent.replace(/[^\\d]/g,"") : "0";
         const prixVal   = parseFloat(prixCell) || 0;
+        const soldOk    = sold === "all" || (sold === "sold" && rowSold === "1") || (sold === "active" && rowSold === "0");
         const ok = text.includes(q)
                 && (dealer === "" || rowDealer.includes(dealer))
                 && (brand  === "" || rowBrand.toLowerCase().includes(brand.toLowerCase()))
                 && (deal   === "" || rowDeal === deal)
+                && soldOk
                 && (maxPrix === 0  || prixVal <= maxPrix);
         row.style.display = ok ? "" : "none";
         if (ok) visible++;

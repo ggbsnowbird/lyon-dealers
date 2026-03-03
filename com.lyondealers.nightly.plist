@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <key>Label</key>
+  <string>com.lyondealers.nightly</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Library/Frameworks/Python.framework/Versions/3.14/bin/python3</string>
+    <string>-m</string>
+    <string>nightly.runner</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/gregoireboutonnet/Documents/lyon-dealers</string>
+
+  <!-- Fix PYTHONPATH — évite ModuleNotFoundError: No module named 'nightly' -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/gregoireboutonnet/Documents/lyon-dealers</string>
+    <key>PATH</key>
+    <string>/Library/Frameworks/Python.framework/Versions/3.14/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <!-- Déclenchement à 02h00 chaque nuit -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>   <integer>2</integer>
+    <key>Minute</key> <integer>0</integer>
+  </dict>
+
+  <!-- Logs -->
+  <key>StandardOutPath</key>
+  <string>/Users/gregoireboutonnet/Library/Logs/lugdunum-nightly.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/gregoireboutonnet/Library/Logs/lugdunum-nightly-error.log</string>
+
+  <!-- Relancer si crash -->
+  <key>KeepAlive</key>
+  <false/>
+
+</dict>
+</plist>
